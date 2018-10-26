@@ -22,4 +22,7 @@
     <!-- App list preference -->
     <dimen name="app_list_margin_start">72dp</dimen>
     <dimen name="app_list_margin_end">16dp</dimen>
+
+    <!-- Color Blend -->
+    <dimen name="color_blend_preview_size">36dp</dimen>
 </resources>
