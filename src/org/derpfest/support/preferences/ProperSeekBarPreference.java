@@ -226,6 +226,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         updateValueViews();
 
         mSlider.addOnChangeListener(this);
+        mSlider.addOnSliderTouchListener(this);
         mResetImageView.setOnClickListener(this);
         mMinusImageView.setOnClickListener(this);
         mPlusImageView.setOnClickListener(this);
