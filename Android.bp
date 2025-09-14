@@ -14,6 +14,7 @@ android_library {
         "androidx.appcompat_appcompat",
         "androidx.recyclerview_recyclerview",
         "SettingsLibMainSwitchPreference",
+        "SettingsLibSliderPreference",
     ],
 
     resource_dirs: ["res"],
