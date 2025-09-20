@@ -179,6 +179,9 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         mSlider.setTrackInactiveTintList(getContext().getColorStateList(
                 com.android.settingslib.widget.preference.slider.R.color
                 .settingslib_expressive_color_slider_track_inactive));
+        mSlider.setThumbStrokeColor(getContext().getColorStateList(
+                com.android.settingslib.widget.preference.slider.R.color
+                .settingslib_expressive_color_slider_thumb));
         mSlider.setThumbTintList(getContext().getColorStateList(
                 com.android.settingslib.widget.preference.slider.R.color
                 .settingslib_expressive_color_slider_thumb));
