@@ -64,8 +64,6 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
     protected TextView mValueTextView;
     protected ImageView mResetImageView;
-    protected ImageView mMinusImageView;
-    protected ImageView mPlusImageView;
     protected Slider mSlider;
 
     protected boolean mTrackingTouch = false;
@@ -233,19 +231,13 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
         mValueTextView = (TextView) holder.findViewById(R.id.value);
         mResetImageView = (ImageView) holder.findViewById(R.id.reset);
-        mMinusImageView = (ImageView) holder.findViewById(R.id.minus);
-        mPlusImageView = (ImageView) holder.findViewById(R.id.plus);
 
         updateValueViews();
 
         mSlider.addOnChangeListener(this);
         mSlider.addOnSliderTouchListener(this);
         mResetImageView.setOnClickListener(this);
-        mMinusImageView.setOnClickListener(this);
-        mPlusImageView.setOnClickListener(this);
         mResetImageView.setOnLongClickListener(this);
-        mMinusImageView.setOnLongClickListener(this);
-        mPlusImageView.setOnLongClickListener(this);
     }
 
     protected int getLimitedValue(int v) {
@@ -274,27 +266,6 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
             }
         }
 
-        if (mMinusImageView != null) {
-            if (mValue == mMinValue || mTrackingTouch) {
-                mMinusImageView.setClickable(false);
-                mMinusImageView.setColorFilter(Utils.getColorAttrDefaultColor(getContext(), android.R.attr.textColorTertiary),
-                        PorterDuff.Mode.SRC_IN);
-            } else {
-                mMinusImageView.setClickable(true);
-                mMinusImageView.clearColorFilter();
-            }
-        }
-
-        if (mPlusImageView != null) {
-            if (mValue == mMaxValue || mTrackingTouch) {
-                mPlusImageView.setClickable(false);
-                mPlusImageView.setColorFilter(Utils.getColorAttrDefaultColor(getContext(), android.R.attr.textColorTertiary),
-                        PorterDuff.Mode.SRC_IN);
-            } else {
-                mPlusImageView.setClickable(true);
-                mPlusImageView.clearColorFilter();
-            }
-        }
     }
 
     protected void changeValue(int newValue) {
@@ -340,10 +311,6 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         if (id == R.id.reset) {
             Toast.makeText(getContext(), getContext().getString(R.string.proper_seekbar_default_value_to_set, getTextValue(mDefaultValue)),
                     Toast.LENGTH_LONG).show();
-        } else if (id == R.id.minus) {
-            setValue(mValue - mInterval, true);
-        } else if (id == R.id.plus) {
-            setValue(mValue + mInterval, true);
         }
         VibrationUtils.doHapticFeedback(mContext, VibrationEffect.EFFECT_CLICK);
     }
@@ -353,10 +320,6 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         int id = v.getId();
         if (id == R.id.reset) {
             setValue(mDefaultValue, true);
-        } else if (id == R.id.minus) {
-            setValue(mMaxValue - mMinValue > mInterval * 2 && mMaxValue + mMinValue < mValue * 2 ? Math.floorDiv(mMaxValue + mMinValue, 2) : mMinValue, true);
-        } else if (id == R.id.plus) {
-            setValue(mMaxValue - mMinValue > mInterval * 2 && mMaxValue + mMinValue > mValue * 2 ? -1 * Math.floorDiv(-1 * (mMaxValue + mMinValue), 2) : mMaxValue, true);
         }
         return true;
     }
