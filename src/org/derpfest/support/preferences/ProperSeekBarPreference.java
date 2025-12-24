@@ -51,6 +51,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     protected boolean mShowSign = false;
     protected String mUnits = "";
     protected boolean mContinuousUpdates = false;
+    protected String mTextStart, mTextEnd;
 
     protected int mMinValue = 0;
     protected int mMaxValue = 100;
@@ -77,9 +78,10 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         try {
             mShowSign = a.getBoolean(R.styleable.ProperSeekBarPreference_showSign, mShowSign);
             String units = a.getString(R.styleable.ProperSeekBarPreference_units);
-            if (units != null)
-                mUnits = " " + units;
+            if (units != null) mUnits = units;
             mContinuousUpdates = a.getBoolean(R.styleable.ProperSeekBarPreference_continuousUpdates, mContinuousUpdates);
+            mTextStart = a.getString(R.styleable.ProperSeekBarPreference_textStart);
+            mTextEnd = a.getString(R.styleable.ProperSeekBarPreference_textEnd);
         } finally {
             a.recycle();
         }
@@ -117,6 +119,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
             mValue = mMinValue;
         }
 
+        setSelectable(false);
         setLayoutResource(R.layout.preference_proper_seekbar);
 
         mContext = context;
@@ -194,6 +197,17 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         mMinusImageView = (ImageView) holder.findViewById(R.id.minus);
         mPlusImageView = (ImageView) holder.findViewById(R.id.plus);
 
+        if (mTextEnd != null || mTextStart != null) {
+            holder.findViewById(R.id.label_frame).setVisibility(View.VISIBLE);
+            TextView startText = (TextView) holder.findViewById(android.R.id.text1);
+            TextView endText = (TextView) holder.findViewById(android.R.id.text2);
+            startText.setText(mTextStart);
+            endText.setText(mTextEnd);
+            // hide plus and minus button if we show bottom text
+            mMinusImageView.setVisibility(View.GONE);
+            mPlusImageView.setVisibility(View.GONE);
+        }
+
         updateValueViews();
 
         mSlider.addOnChangeListener(this);
@@ -212,16 +226,16 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
 
     protected String getTextValue(int v) {
-        return (mShowSign && v > 0 ? "+" : "") + String.valueOf(v) + mUnits;
+        return String.valueOf(v) + mUnits;
     }
 
     protected void updateValueViews() {
         if (mValueTextView != null) {
-            mValueTextView.setText(getContext().getString(R.string.proper_seekbar_value,
-                    (!mTrackingTouch || mContinuousUpdates ? getTextValue(mValue) +
-                    (mDefaultValueExists && mValue == mDefaultValue ? " (" +
-                    getContext().getString(R.string.proper_seekbar_default_value) + ")" : "")
-                    : getTextValue(mTrackingValue))));
+            String textValue = getTextValue(mValue);
+            if (mTrackingTouch && !mContinuousUpdates) {
+                textValue = getTextValue(mTrackingValue);
+            }
+            mValueTextView.setText(textValue);
         }
 
         if (mResetImageView != null) {
