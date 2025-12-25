@@ -45,6 +45,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         Slider.OnSliderTouchListener, View.OnClickListener, View.OnLongClickListener {
     protected final String TAG = getClass().getName();
     private static final String SETTINGS_NS = "http://schemas.android.com/apk/res/com.android.settings";
+    private static final String SETTINGS_NS_ALT = "http://schemas.android.com/apk/res-auto";
     protected static final String ANDROIDNS = "http://schemas.android.com/apk/res/android";
 
     protected int mInterval = 1;
@@ -55,7 +56,6 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
     protected int mMinValue = 0;
     protected int mMaxValue = 100;
-    protected boolean mDefaultValueExists = false;
     protected int mDefaultValue;
 
     protected int mValue;
@@ -79,25 +79,29 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
             mShowSign = a.getBoolean(R.styleable.ProperSeekBarPreference_showSign, mShowSign);
             String units = a.getString(R.styleable.ProperSeekBarPreference_units);
             if (units != null) mUnits = units;
-            mContinuousUpdates = a.getBoolean(R.styleable.ProperSeekBarPreference_continuousUpdates, mContinuousUpdates);
+            mContinuousUpdates = a.getBoolean(
+                    R.styleable.ProperSeekBarPreference_continuousUpdates, false);
             mTextStart = a.getString(R.styleable.ProperSeekBarPreference_textStart);
             mTextEnd = a.getString(R.styleable.ProperSeekBarPreference_textEnd);
         } finally {
             a.recycle();
         }
 
-        String newInterval = attrs.getAttributeValue(SETTINGS_NS, "interval");
-        if (newInterval != null) {
-            mInterval = Integer.parseInt(newInterval);
-        }
-        if (newInterval == null) {
-            newInterval = attrs.getAttributeValue(ANDROIDNS, "interval");
-            if (newInterval != null) mInterval = Integer.parseInt(newInterval);
+        try {
+            String newInterval = attrs.getAttributeValue(SETTINGS_NS, "interval");
+            if (newInterval != null) {
+                mInterval = Integer.parseInt(newInterval);
+            } else {
+                newInterval = attrs.getAttributeValue(SETTINGS_NS_ALT, "interval");
+                if (newInterval != null) mInterval = Integer.parseInt(newInterval);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Invalid interval value", e);
         }
 
         mMinValue = attrs.getAttributeIntValue(SETTINGS_NS, "min", mMinValue);
         if (mMinValue == 0) {
-            int min = attrs.getAttributeIntValue(ANDROIDNS, "min", mMinValue);
+            int min = attrs.getAttributeIntValue(SETTINGS_NS_ALT, "min", mMinValue);
             if (min != 0) mMinValue = min;
         }
 
@@ -108,15 +112,6 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         }
         if (mMaxValue < mMinValue) {
             mMaxValue = mMinValue;
-        }
-
-        String defaultValue = attrs.getAttributeValue(ANDROIDNS, "defaultValue");
-        mDefaultValueExists = defaultValue != null && !defaultValue.isEmpty();
-        if (mDefaultValueExists) {
-            mDefaultValue = getLimitedValue(Integer.parseInt(defaultValue));
-            mValue = mDefaultValue;
-        } else {
-            mValue = mMinValue;
         }
 
         setSelectable(false);
@@ -239,11 +234,10 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         }
 
         if (mResetImageView != null) {
-            if (!mDefaultValueExists || mValue == mDefaultValue || mTrackingTouch) {
+            if (mValue == mDefaultValue || mTrackingTouch)
                 mResetImageView.setVisibility(View.INVISIBLE);
-            } else {
+            else
                 mResetImageView.setVisibility(View.VISIBLE);
-            }
         }
 
         if (mMinusImageView != null) {
@@ -310,7 +304,8 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     public void onClick(View v) {
         int id = v.getId();
         if (id == R.id.reset) {
-            Toast.makeText(getContext(), getContext().getString(R.string.proper_seekbar_default_value_to_set, getTextValue(mDefaultValue)),
+            Toast.makeText(getContext(), getContext().getString(
+                    R.string.proper_seekbar_default_value_to_set, getTextValue(mDefaultValue)),
                     Toast.LENGTH_LONG).show();
         } else if (id == R.id.minus) {
             setValue(mValue - mInterval, true);
@@ -326,48 +321,43 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         if (id == R.id.reset) {
             setValue(mDefaultValue, true);
         } else if (id == R.id.minus) {
-            setValue(mMaxValue - mMinValue > mInterval * 2 && mMaxValue + mMinValue < mValue * 2 ? Math.floorDiv(mMaxValue + mMinValue, 2) : mMinValue, true);
+            int value = mMinValue;
+            if (mMaxValue - mMinValue > mInterval * 2 && mMaxValue + mMinValue < mValue * 2) {
+                value = Math.floorDiv(mMaxValue + mMinValue, 2);
+            }
+            setValue(value, true);
         } else if (id == R.id.plus) {
-            setValue(mMaxValue - mMinValue > mInterval * 2 && mMaxValue + mMinValue > mValue * 2 ? -1 * Math.floorDiv(-1 * (mMaxValue + mMinValue), 2) : mMaxValue, true);
+            int value = mMaxValue;
+            if (mMaxValue - mMinValue > mInterval * 2 && mMaxValue + mMinValue > mValue * 2) {
+                value = -1 * Math.floorDiv(-1 * (mMaxValue + mMinValue), 2);
+            }
+            setValue(value, true);
         }
         return true;
     }
 
     @Override
-    protected void onSetInitialValue(boolean restoreValue, Object defaultValue) {
-        if (restoreValue) {
-            mValue = getPersistedInt(mValue);
-        }
+    protected Object onGetDefaultValue(TypedArray ta, int index) {
+        mDefaultValue = ta.getInt(index, mMinValue);
+        return mDefaultValue;
+    }
+
+    @Override
+    protected void onSetInitialValue(boolean restorePersistedValue, Object defaultValue) {
+        mValue = getPersistedInt(mDefaultValue);
     }
 
     @Override
     public void setDefaultValue(Object defaultValue) {
-        if (defaultValue instanceof Integer) {
-            setDefaultValue((Integer) defaultValue, mSlider != null);
-        } else {
-            setDefaultValue(defaultValue == null ? (String) null : defaultValue.toString(), mSlider != null);
-        }
+        setDefaultValue((Integer) defaultValue, mSlider != null);
     }
 
     public void setDefaultValue(int newValue, boolean update) {
         newValue = getLimitedValue(newValue);
-        if (!mDefaultValueExists || mDefaultValue != newValue) {
-            mDefaultValueExists = true;
+        if (mDefaultValue != newValue) {
             mDefaultValue = newValue;
-            if (update) {
+            if (update)
                 updateValueViews();
-            }
-        }
-    }
-
-    public void setDefaultValue(String newValue, boolean update) {
-        if (mDefaultValueExists && (newValue == null || newValue.isEmpty())) {
-            mDefaultValueExists = false;
-            if (update) {
-                updateValueViews();
-            }
-        } else if (newValue != null && !newValue.isEmpty()) {
-            setDefaultValue(Integer.parseInt(newValue), update);
         }
     }
 
@@ -376,33 +366,36 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         if (mSlider != null) mSlider.setValueTo(mMaxValue);
     }
 
+    public int getMax() {
+        return mMaxValue;
+    }
+
     public void setMin(int min) {
         mMinValue = min;
         if (mSlider != null) mSlider.setValueFrom(mMinValue);
     }
 
     public void setValue(int newValue) {
-        mValue = getLimitedValue(newValue);
-        if (mSlider != null) mSlider.setValue(mValue);
-        onValueChange(mSlider, mValue, false);
-        notifyChanged();
+        newValue = getLimitedValue(newValue);
+        if (mSlider != null) {
+            mSlider.setValue(newValue);
+        } else {
+            mValue = newValue;
+        }
     }
 
     public void setValue(int newValue, boolean update) {
         newValue = getLimitedValue(newValue);
         if (mValue != newValue) {
-            if (!callChangeListener(newValue)) {
-                return;
+            if (update) {
+                if (mSlider != null) {
+                    mSlider.setValue(newValue);
+                } else {
+                    mValue = newValue;
+                }
+            } else {
+                mValue = newValue;
             }
-
-            mValue = newValue;
-            persistInt(newValue);
-            changeValue(newValue);  // if needed
-            if (update && mSlider != null)
-                mSlider.setValue(newValue);
-
-            updateValueViews();
-            notifyChanged();
         }
     }
 
@@ -412,5 +405,14 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
     public void refresh(int newValue) {
         setValue(newValue, mSlider != null);
+    }
+
+    public void setUnits(String units) {
+        mUnits = units;
+        updateValueViews();
+    }
+
+    public String getUnits() {
+        return mUnits;
     }
 }
