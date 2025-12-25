@@ -53,6 +53,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     protected String mUnits = "";
     protected boolean mContinuousUpdates = false;
     protected String mTextStart, mTextEnd;
+    protected boolean mShowButtons;
 
     protected int mMinValue = 0;
     protected int mMaxValue = 100;
@@ -83,6 +84,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
                     R.styleable.ProperSeekBarPreference_continuousUpdates, false);
             mTextStart = a.getString(R.styleable.ProperSeekBarPreference_textStart);
             mTextEnd = a.getString(R.styleable.ProperSeekBarPreference_textEnd);
+            mShowButtons = a.getBoolean(R.styleable.ProperSeekBarPreference_showButtons, true);
         } finally {
             a.recycle();
         }
@@ -123,7 +125,6 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
             mMaxValue = mMinValue;
         }
 
-        setSelectable(false);
         setLayoutResource(R.layout.preference_proper_seekbar);
 
         mContext = context;
@@ -207,7 +208,9 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
             TextView endText = (TextView) holder.findViewById(android.R.id.text2);
             startText.setText(mTextStart);
             endText.setText(mTextEnd);
-            // hide plus and minus button if we show bottom text
+        }
+
+        if (!mShowButtons) {
             mMinusImageView.setVisibility(View.GONE);
             mPlusImageView.setVisibility(View.GONE);
         }
