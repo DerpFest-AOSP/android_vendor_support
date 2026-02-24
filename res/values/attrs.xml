@@ -31,6 +31,11 @@
         <attr name="dividerBelow" format="boolean" />
     </declare-styleable>
 
+    <!-- When persisted value is 0, show this color in preview/dialog instead of black (e.g. theme default). -->
+    <declare-styleable name="ColorPickerSystemPreference">
+        <attr name="defaultDisplayColorRes" format="reference" />
+    </declare-styleable>
+
     <!-- Base attributes available to CircularImageView -->
     <declare-styleable name="CircularImageView">
         <attr name="civ_border" format="boolean"/>

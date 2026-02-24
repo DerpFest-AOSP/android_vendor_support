@@ -113,9 +113,9 @@ public class ColorPickerPreference extends Preference implements
             defaultValue = Color.BLACK;
         }
         mCurrentValue = getPersistedInt((Integer) defaultValue);
-        mCurrentHexValue = convertToARGB((Integer) defaultValue);
+        mCurrentHexValue = convertToARGB(getDisplayColor());
         if (mAutoSummary) setSummary(mCurrentHexValue);
-        onColorChanged(mCurrentValue);
+        setPreviewColor();
     }
 
     private void init(Context context, AttributeSet attrs) {
@@ -221,10 +221,19 @@ public class ColorPickerPreference extends Preference implements
         ImageView iView = new ImageView(getContext());
         mWidgetFrameView.addView(iView);
         final int size = (int) getContext().getResources().getDimension(R.dimen.oval_notification_size);
-        final int imageColor = ((mCurrentValue & 0xF0F0F0) == 0xF0F0F0) ?
-                (mCurrentValue - 0x101010) : mCurrentValue;
+        final int displayColor = getDisplayColor();
+        final int imageColor = ((displayColor & 0xF0F0F0) == 0xF0F0F0) ?
+                (displayColor - 0x101010) : displayColor;
         iView.setImageDrawable(createOvalShape(size, 0xFF000000 + imageColor));
         iView.setTag("preview");
+    }
+
+    /**
+     * Color to show in preview and dialog when the stored value is 0. Override in subclasses to
+     * show a theme default instead of black (e.g. for gradient start/end pickers).
+     */
+    protected int getDisplayColor() {
+        return mCurrentValue;
     }
 
     @Override
@@ -256,7 +265,7 @@ public class ColorPickerPreference extends Preference implements
     }
 
     protected void showDialog(Bundle state) {
-        mDialog = new ColorPickerDialog(getContext(), mCurrentValue);
+        mDialog = new ColorPickerDialog(getContext(), getDisplayColor());
         mDialog.setOnColorChangedListener(this);
         if (mAlphaSliderEnabled) {
             mDialog.setAlphaSliderVisible(true);
