@@ -180,9 +180,11 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         }
         mSlider = slider;
 
-        mSlider.setValueTo(mMaxValue);
+        // Configure range and step before value: Material Slider validates that the value equals
+        // valueFrom + n * stepSize when step is applied; setting value before stepSize allowed
+        // invalid persisted values (e.g. 255) and then crashed when setStepSize ran.
         mSlider.setValueFrom(mMinValue);
-        mSlider.setValue(snapValueToStep(mValue));
+        mSlider.setValueTo(mMaxValue);
         mSlider.setEnabled(isEnabled());
         mSlider.setLabelBehavior(LabelFormatter.LABEL_GONE);
         mSlider.setTickVisible(false);
@@ -191,6 +193,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         } else {
             Log.w(TAG, "Step size is zero or invalid: " + mInterval);
         }
+        mSlider.setValue(snapValueToStep(mValue));
 
         // Set up slider size
         if (SettingsThemeHelper.isExpressiveTheme(getContext())) {
