@@ -72,6 +72,22 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
     private final Context mContext;
 
+    /**
+     * RecyclerView reuses preference rows; {@link Slider} listeners accumulate if not removed.
+     * A stale listener would persist values from one slider (e.g. 0–100 transparency) into
+     * another preference (e.g. bar count), causing invalid Material Slider state and crashes.
+     */
+    private final View.OnAttachStateChangeListener mAttachListener =
+            new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(View v) {}
+
+                @Override
+                public void onViewDetachedFromWindow(View v) {
+                    detachSliderListeners();
+                }
+            };
+
     public ProperSeekBarPreference(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
 
@@ -144,14 +160,29 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         this(context, null);
     }
 
+    private void detachSliderListeners() {
+        if (mSlider != null) {
+            mSlider.removeOnChangeListener(this);
+            mSlider.removeOnSliderTouchListener(this);
+        }
+    }
+
     @Override
     public void onBindViewHolder(PreferenceViewHolder holder) {
         super.onBindViewHolder(holder);
 
-        mSlider = (Slider) holder.findViewById(R.id.slider);
+        holder.itemView.removeOnAttachStateChangeListener(mAttachListener);
+        holder.itemView.addOnAttachStateChangeListener(mAttachListener);
+
+        Slider slider = (Slider) holder.findViewById(R.id.slider);
+        if (mSlider != null && mSlider != slider) {
+            detachSliderListeners();
+        }
+        mSlider = slider;
+
         mSlider.setValueTo(mMaxValue);
         mSlider.setValueFrom(mMinValue);
-        mSlider.setValue(mValue);
+        mSlider.setValue(snapValueToStep(mValue));
         mSlider.setEnabled(isEnabled());
         mSlider.setLabelBehavior(LabelFormatter.LABEL_GONE);
         mSlider.setTickVisible(false);
@@ -217,6 +248,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
         updateValueViews();
 
+        detachSliderListeners();
         mSlider.addOnChangeListener(this);
         mSlider.addOnSliderTouchListener(this);
         mResetImageView.setOnClickListener(this);
@@ -231,6 +263,20 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
         return v < mMinValue ? mMinValue : (v > mMaxValue ? mMaxValue : v);
     }
 
+    /**
+     * Snaps a value to the nearest valid discrete position for Material {@link Slider}
+     * when {@link Slider#setStepSize(float)} is used (must align with valueFrom + n * step).
+     */
+    protected int snapValueToStep(int value) {
+        value = getLimitedValue(value);
+        if (mInterval <= 1) {
+            return value;
+        }
+        int offset = value - mMinValue;
+        int steps = Math.round((float) offset / (float) mInterval);
+        int snapped = mMinValue + steps * mInterval;
+        return getLimitedValue(snapped);
+    }
 
     protected String getTextValue(int v) {
         return String.valueOf(v) + mUnits;
@@ -280,13 +326,13 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
     @Override
     public void onValueChange(Slider slider, float value, boolean fromUser) {
-        int newValue = getLimitedValue(Math.round(value));
+        int newValue = snapValueToStep(getLimitedValue(Math.round(value)));
         if (mTrackingTouch && !mContinuousUpdates) {
             mTrackingValue = newValue;
             VibrationUtils.doHapticFeedback(mContext, VibrationEffect.EFFECT_TEXTURE_TICK);
         } else if (mValue != newValue) {
             if (!callChangeListener(newValue)) {
-                mSlider.setValue(mValue);
+                slider.setValue(mValue);
                 return;
             }
             changeValue(newValue);
@@ -307,7 +353,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     public void onStopTrackingTouch(Slider slider) {
         mTrackingTouch = false;
         if (!mContinuousUpdates) {
-            onValueChange(mSlider, mTrackingValue, false);
+            onValueChange(slider, mTrackingValue, false);
         }
         notifyChanged();
     }
@@ -350,13 +396,17 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
 
     @Override
     protected Object onGetDefaultValue(TypedArray ta, int index) {
-        mDefaultValue = ta.getInt(index, mMinValue);
+        mDefaultValue = snapValueToStep(ta.getInt(index, mMinValue));
         return mDefaultValue;
     }
 
     @Override
     protected void onSetInitialValue(boolean restorePersistedValue, Object defaultValue) {
-        mValue = getPersistedInt(mDefaultValue);
+        int raw = getPersistedInt(mDefaultValue);
+        mValue = snapValueToStep(raw);
+        if (mValue != raw) {
+            persistInt(mValue);
+        }
     }
 
     @Override
@@ -365,7 +415,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     }
 
     public void setDefaultValue(int newValue, boolean update) {
-        newValue = getLimitedValue(newValue);
+        newValue = snapValueToStep(getLimitedValue(newValue));
         if (mDefaultValue != newValue) {
             mDefaultValue = newValue;
             if (update)
@@ -388,7 +438,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     }
 
     public void setValue(int newValue) {
-        newValue = getLimitedValue(newValue);
+        newValue = snapValueToStep(getLimitedValue(newValue));
         if (mSlider != null) {
             mSlider.setValue(newValue);
         } else {
@@ -397,7 +447,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     }
 
     public void setValue(int newValue, boolean update) {
-        newValue = getLimitedValue(newValue);
+        newValue = snapValueToStep(getLimitedValue(newValue));
         if (mValue != newValue) {
             if (update) {
                 if (mSlider != null) {
