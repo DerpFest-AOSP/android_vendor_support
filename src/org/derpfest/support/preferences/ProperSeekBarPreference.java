@@ -141,6 +141,15 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
             mMaxValue = mMinValue;
         }
 
+        if (attrs != null) {
+            if (attrs.getAttributeValue(ANDROIDNS, "defaultValue") != null) {
+                int xmlDefault = attrs.getAttributeIntValue(ANDROIDNS, "defaultValue", mMinValue);
+                mDefaultValue = snapValueToStep(getLimitedValue(xmlDefault));
+            } else {
+                mDefaultValue = snapValueToStep(getLimitedValue(mDefaultValue));
+            }
+        }
+
         setLayoutResource(R.layout.preference_proper_seekbar);
 
         mContext = context;
@@ -365,6 +374,7 @@ public class ProperSeekBarPreference extends Preference implements Slider.OnChan
     public void onClick(View v) {
         int id = v.getId();
         if (id == R.id.reset) {
+            setValue(mDefaultValue, true);
             Toast.makeText(getContext(), getContext().getString(
                     R.string.proper_seekbar_default_value_to_set, getTextValue(mDefaultValue)),
                     Toast.LENGTH_LONG).show();
