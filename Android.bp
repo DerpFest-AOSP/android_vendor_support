@@ -6,7 +6,10 @@ android_library {
         enabled: false,
     },
 
-    srcs: ["src/**/*.java"],
+    srcs: [
+        "src/**/*.java",
+        "src/**/*.kt",
+    ],
 
     static_libs: [
         "androidx.core_core",
@@ -22,6 +25,10 @@ android_library {
         "kotlin-stdlib",
         "kotlinx_coroutines_android",
         "kotlinx_coroutines",
+    ],
+
+    kotlincflags: [
+        "-Xjvm-default=all",
     ],
 
     resource_dirs: ["res"],
