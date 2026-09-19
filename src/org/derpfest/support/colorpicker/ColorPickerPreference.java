@@ -247,9 +247,9 @@ public class ColorPickerPreference extends Preference implements
     public void onColorChanged(int color) {
         mCurrentValue = color;
         mCurrentHexValue = convertToARGB(color);
+        persistInt(color);
         if (mAutoSummary) setSummary(mCurrentHexValue);
         setPreviewColor();
-        persistInt(color);
         try {
             getOnPreferenceChangeListener().onPreferenceChange(this, color);
         } catch (NullPointerException e) {
