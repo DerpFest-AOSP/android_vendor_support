@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="dialog_color_picker">顏色選擇器</string>
+    <string name="press_color_to_apply">按下下方的顏色即可套用</string>
+    <string name="hex">十六進位：</string>
+    <string name="set">設定</string>
+    <string name="color_default">預設</string>
+    <string name="active_edge_app_select_title">選取應用程式</string>
+    <string name="active_edge_activity_select_title">選擇應用程式活動</string>
+    <string name="edit_hint">數值</string>
+    <string name="seek_value_edit_label">設定數值</string>
+    <string name="ok">確定</string>
+    <string name="cancel">取消</string>
+    <string name="proper_seekbar_default_value_to_set">預設值：<xliff:g id="v">%s</xliff:g>\n長按即可設定</string>
+</resources>
